@@ -18,6 +18,8 @@
 NEW_USER_NAME="dev_uwp"
 PHP_USER_NAME="php_"$NEW_USER_NAME
 CURR_DIR=$('pwd')
+MYSQL_USER_NAME=$NEW_USER_NAME
+
 
 #should check if such user
 useradd $NEW_USER_NAME
@@ -51,20 +53,20 @@ sudo useradd -g php_$NEW_USER_NAME php_$NEW_USER_NAME
 
 
 #todo chekc setting if wee need to create database
-
-tmp_file = CURR_DIR"/templates/tmp.sql"
-cp CURR_DIR"/templates/sql_user_and_database_setup.sql" $tmp_file
-sed -i -e 's/{{MySQL_USER}}/'$MYSQL_USER_NAME'/g' $tmp_file
-sed -i -e 's/{{MySQL_DB}}/'$MYSQL_USER_NAME'/g' $tmp_file
-sed -i -e 's/{{MySQL_PASSWORD}}/'$MYSQL_USER_NAME'/g' $tmp_file
-
-
 #generate mysql users passowrd
 MYSQL_USER_PASS="$(openssl rand -base64 20)"
 
+tmp_file=$CURR_DIR"/templates/tmp.sql"
+yes | cp -rf $CURR_DIR"/templates/sql_user_and_database_setup.sql" $tmp_file
+sed -i -e 's/{{MYSQL_USER}}/'$MYSQL_USER_NAME'/g' $tmp_file
+sed -i -e 's/{{MYSQL_DB}}/'$MYSQL_USER_NAME'/g' $tmp_file
+sed -i -e 's/{{MYSQL_PASSWORD}}/'MYSQL_USER_PASS'/g' $tmp_file
+
+
 #todo copy sql tamplate with replaced values
 
-mysql -u root -p`cat /root/.mysqlpw ` < tmp.sql
+mysql -u root -p < $tmp_file
+rm $tmp_file
 
 echo "U:"$NEW_USER_NAME
 echo "P:"$NEW_USER_PASS
