@@ -16,7 +16,8 @@
 #setting the username and php user name
 #todo from input not hardcoded
 NEW_USER_NAME="dev_uwp"
-PHP_USER_NAME="php_"$NEW_USER_NAME;
+PHP_USER_NAME="php_"$NEW_USER_NAME
+CURR_DIR=$('pwd')
 
 #should check if such user
 useradd $NEW_USER_NAME
@@ -49,5 +50,25 @@ sudo useradd -g php_$NEW_USER_NAME php_$NEW_USER_NAME
 #todo copy standart nginx.conf
 
 
+#todo chekc setting if wee need to create database
+
+tmp_file = CURR_DIR"/templates/tmp.sql"
+cp CURR_DIR"/templates/sql_user_and_database_setup.sql" $tmp_file
+sed -i -e 's/{{MySQL_USER}}/'$MYSQL_USER_NAME'/g' $tmp_file
+sed -i -e 's/{{MySQL_DB}}/'$MYSQL_USER_NAME'/g' $tmp_file
+sed -i -e 's/{{MySQL_PASSWORD}}/'$MYSQL_USER_NAME'/g' $tmp_file
+
+
+#generate mysql users passowrd
+MYSQL_USER_PASS="$(openssl rand -base64 20)"
+
+#todo copy sql tamplate with replaced values
+
+mysql -u root -p`cat /root/.mysqlpw ` < tmp.sql
+
 echo "U:"$NEW_USER_NAME
 echo "P:"$NEW_USER_PASS
+
+echo "MYSQL  U:"$NEW_USER_NAME
+echo "MYSQL  O:"$MYSQL_USER_PASS
+echo "MYSQL DB:"$NEW_USER_NAME
