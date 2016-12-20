@@ -5,11 +5,13 @@
 #todo check if all necassary toolas are there
 #todo do we have openssl
 #todo do we have mkpasswd
-#todo get ussername as passed param
+#todo ask for ussername
+#todo ask for domain string
 #todo try to install ncassary packages
 #todo install sudo apt-get install whois
 #todo install sudo apt-get install openssl
-$todo check if script is in sudo mode
+#todo check if script is in sudo mode
+
 
 #setting the username and php user name
 NEW_USER_NAME="dev_uwp"
@@ -44,6 +46,5 @@ sudo useradd -g php_$NEW_USER_NAME php_$NEW_USER_NAME
 #todo copy standart nginx.conf
 
 
-
-
-echo $NEW_USER_PASS
+echo "U:"$NEW_USER_NAME
+echo "P:"$NEW_USER_PASS
