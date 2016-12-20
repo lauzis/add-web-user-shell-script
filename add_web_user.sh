@@ -14,6 +14,7 @@
 
 
 #setting the username and php user name
+#todo from input not hardcoded
 NEW_USER_NAME="dev_uwp"
 PHP_USER_NAME="php_"$NEW_USER_NAME;
 
@@ -21,8 +22,10 @@ PHP_USER_NAME="php_"$NEW_USER_NAME;
 useradd $NEW_USER_NAME
 
 #generates new password
+#todo lenght from config/input not hardcoded
 NEW_USER_PASS="$(openssl rand -base64 20)"
 #hashes password for updating the user
+#todo password hash algorithm from config not hardcoded
 NEW_USER_PASS_HASH="$(mkpasswd -m sha-256 $NEW_USER_PASS)"
 
 #changes user passowrd
