@@ -2,10 +2,9 @@
 # author: Aivars Lauzis
 # email: lauzis@inbox.lv
 
-
-
 CURR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SETTINGS_FILE=$CURR_DIR"/settings.cfg";
+
 
 #include settings
 #checks if settings file exists if not exits
@@ -14,10 +13,48 @@ then
 	source $SETTINGS_FILE
 else
 	echo ERR:1 Settings file $SETTINGS_FILE not found... sorry, can not continue...
-	exit
+	exit;
 fi
 
 
+echo "================================================="
+echo "                 Disclaimer"
+echo "================================================="
+echo "What it does?"
+echo "-------------"
+echo "Creates user and home dir, creates folders for web (logs, www),
+copies config files to the nginx"
+echo ""
+echo "How it works?"
+echo "-------------"
+#TODO other params
+echo "add_web_user username domain"
+echo ""
+echo ""
+
+
+
+#setting the username and php user name
+NEW_USER_NAME=$1
+DOMAIN=$2
+
+
+echo "CHECKING data..."
+if [ -n "$NEW_USER_NAME" ]
+then
+    echo "USER:"$NEW_USER_NAME
+else
+    echo "ERR1: No user name provided. Exit."
+    exit;
+fi
+
+if [ -n "$DOMAIN" ]
+then
+    echo "DOMAIN:"$DOMAIN
+else
+    echo "ERR1: No domain name provided. Exit."
+    exit;
+fi
 
 
 #todo check if all necassary toolas are there
@@ -31,9 +68,6 @@ fi
 #todo check if script is in sudo mode
 
 
-#setting the username and php user name
-#todo from input not hardcoded
-NEW_USER_NAME="uwp"
 
 
 MYSQL_USER_NAME=$NEW_USER_NAME
@@ -57,6 +91,10 @@ mkdir /home/$NEW_USER_NAME
 mkdir /home/$NEW_USER_NAME/logs
 mkdir /home/$NEW_USER_NAME/www
 
+
+PROJECT_DIR="/home/"$NEW_USER_NAME"/www"
+LOGS_DIR="/home/"$NEW_USER_NAME"/logs"
+
 #changes the ownership of the directories
 chown $NEW_USER_NAME /home/$NEW_USER_NAME -R
 chgrp $NEW_USER_NAME /home/$NEW_USER_NAME -R
@@ -69,11 +107,62 @@ then
     PHP_USER_NAME="php_"$NEW_USER_NAME
     groupadd $PHP_USER_NAME
     sudo useradd -g $PHP_USER_NAME $PHP_USER_NAME
-
 fi
 
 #todo copy standart php.conf
 #todo copy standart nginx.conf
+
+WEB_PROJECT_CONFIG_FILE="$CURR_DIR/templates/wp.conf"
+#todo does not work the case selector ?? always gos to the default;
+
+case "$WEB_PROJECT_CONFIG_TYPE" in
+    default)
+        WEB_PROJECT_CONFIG_FILE="$CURR_DIR/templates/default.conf"
+        ;;
+    wp)
+        WEB_PROJECT_CONFIG_FILE="$CURR_DIR/templates/wp.conf"
+        ;;
+    magento)
+            WEB_PROJECT_CONFIG_FILE="$CURR_DIR/templates/magento.conf"
+        ;;
+    magento2)
+            WEB_PROJECT_CONFIG_FILE="$CURR_DIR/templates/magento2.conf"
+        ;;
+    *)
+       echo $"Usage: '$WEB_PROJECT_CONFIG_TYPE' {wordpress|nginx|nginx2|default}"
+       exit 1
+       ;;
+esac
+
+echo $WEB_PROJECT_CONFIG_TYPE
+echo $WEB_PROJECT_CONFIG_FILE
+
+
+#todo apache ?
+
+if [ -f "$WEB_PROJECT_CONFIG_FILE" ]
+then
+    echo "--------------------------------------"
+    echo "Copy config and replace the values"
+    echo $WEB_PROJECT_CONFIG_FILE
+    echo "--------------------------------------"
+	#have to copy replace the strings
+	tmp_file="$NGINX_PATH/$DOMAIN.conf"
+    yes | cp -rf $WEB_PROJECT_CONFIG_FILE $tmp_file
+    #replace domain
+
+    sed -i -e "s/{{DOMAIN}}/$DOMAIN/g" $tmp_file
+    #replace project dir
+    PROJECT_DIR=$(echo "$PROJECT_DIR" | sed 's/\//\\\//g')
+    sed -i -e "s/{{PROJECT_DIR}}/$PROJECT_DIR/g" $tmp_file
+    #replace logs dir
+    LOGS_DIR=$(echo "$LOGS_DIR" | sed 's/\//\\\//g')
+    sed -i -e "s/{{LOGS_DIR}}/$LOGS_DIR/g" $tmp_file
+else
+	echo "ERR:2 Web project settings file $WEB_PROJECT_CONFIG_FILE not found... sorry, can not continue... not coppied."
+fi
+
+
 
 CREATE_MYSQL_USER_AND_DATABASE=0
 if [ $CREATE_MYSQL_USER_AND_DATABASE ]
@@ -85,7 +174,7 @@ then
     yes | cp -rf $CURR_DIR"/templates/sql_user_and_database_setup.sql" $tmp_file
     sed -i -e 's/{{MYSQL_USER}}/'$MYSQL_USER_NAME'/g' $tmp_file
     sed -i -e 's/{{MYSQL_DB}}/'$MYSQL_USER_NAME'/g' $tmp_file
-    sed -i -e 's/{{MYSQL_PASSWORD}}/'MYSQL_USER_PASS'/g' $tmp_file
+    sed -i -e 's/{{MYSQL_PASSWORD}}/'$MYSQL_USER_PASS'/g' $tmp_file
 
     mysql -u root -p < $tmp_file
     #removes temporary sql file
@@ -93,12 +182,13 @@ then
 fi
 
 
+
 echo "U:"$NEW_USER_NAME
 echo "P:"$NEW_USER_PASS
 
 if [ $CREATE_MYSQL_USER_AND_DATABASE ]
 then
-    echo "MYSQL  U:"$NEW_USER_NAME
-    echo "MYSQL  O:"$MYSQL_USER_PASS
-    echo "MYSQL DB:"$NEW_USER_NAME
+    echo "MYSQL U: $NEW_USER_NAME"
+    #echo "MYSQL  O:"$MYSQL_USER_PASS
+    #echo "MYSQL DB:"$NEW_USER_NAME
 fi
